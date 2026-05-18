@@ -469,13 +469,18 @@ const Orders = () => {
       // الشحن من النص (بعد علامة +) — لا يتأثر بالكمية
       const shippingCost = parseFloat(manualOrder.shippingCost) || 0;
 
-      const productDetails = productName ? [{
-        name: productName,
-        quantity: quantity,
-        price: productPrice,
-        size: manualOrder.productSize || null,
-        color: manualOrder.productColor || null
-      }] : null;
+      const fallbackOrderDetails = [
+        manualOrder.customerName,
+        manualOrder.phone,
+        manualOrder.address,
+        [productName, manualOrder.productColor, manualOrder.productSize].filter(Boolean).join(" "),
+        quantity ? `الكمية ${quantity}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+        .trim();
+
+      const rawOrderDetails = manualOrderText.trim() || fallbackOrderDetails || null;
 
       // Create order with new fields
       const { data: order, error: orderError } = await supabase
@@ -486,7 +491,7 @@ const Orders = () => {
           shipping_cost: shippingCost,
           governorate_id: null,
           status: 'pending',
-          order_details: productDetails ? JSON.stringify(productDetails) : null,
+          order_details: rawOrderDetails,
           manual_code: manualOrder.manualCode || null,
           account_name: manualOrder.accountName || null,
           manual_order_date: manualOrder.manualDate || null,

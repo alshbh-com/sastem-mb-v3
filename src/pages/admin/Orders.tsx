@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import * as XLSX from 'xlsx';
 import { formatOrderItems, formatSizesDisplay } from "@/lib/formatOrderItems";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { printMpInvoices } from "@/lib/printMpInvoices";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -681,113 +682,16 @@ const Orders = () => {
     toast.success("تم تصدير الأوردرات بنجاح");
   };
 
-  const handlePrintInvoices = () => {
+  const handlePrintInvoices = async () => {
     if (selectedOrders.length === 0) {
       toast.error("يرجى اختيار أوردرات للطباعة");
       return;
     }
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     const selectedOrdersData = orders?.filter(o => selectedOrders.includes(o.id));
-    
-    const invoicesHtml = selectedOrdersData?.map(order => {
-      // Build items with size and color
-      let orderItemsHtml = '';
-      
-      // Try parsing order_details for external store orders
-      if (order.order_details) {
-        try {
-          const parsed = JSON.parse(order.order_details);
-          if (Array.isArray(parsed)) {
-            orderItemsHtml = parsed.map((item: any) => `
-              <tr>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.name || '-'}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.size || '-'}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.color || '-'}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center;">${parseFloat(item.price?.toString() || "0").toFixed(2)} ج.م</td>
-              </tr>
-            `).join('');
-          }
-        } catch (e) {
-          // Not JSON
-        }
-      }
-      
-      if (!orderItemsHtml && order.order_items) {
-        const formatted = getFormattedItems(order.order_items);
-        orderItemsHtml = formatted?.map((item) => `
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.name}</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">${formatSizesDisplay(item.sizes)}</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.color || '-'}</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.totalPrice.toFixed(2)} ج.م</td>
-          </tr>
-        `).join('') || '';
-      }
+    if (!selectedOrdersData?.length) return;
 
-      const totalAmount = parseFloat(order.total_amount?.toString() || "0");
-      const shippingCost = parseFloat(order.shipping_cost?.toString() || "0");
-      const finalAmount = totalAmount + shippingCost;
-
-      return `
-        <div style="page-break-after: always; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-size: 32px; font-weight: bold; color: #d4af37; margin: 0;">make store</h1>
-          </div>
-          <h2 style="text-align: center; margin: 10px 0; font-size: 18px;">فاتورة</h2>
-          <hr style="border: 1px solid #ddd;"/>
-          <div style="margin: 15px 0; line-height: 1.8;">
-            <p style="margin: 5px 0;"><strong>رقم الأوردر:</strong> #${order.order_number || order.id.slice(0, 8)}</p>
-            <p style="margin: 5px 0;"><strong>التاريخ:</strong> ${new Date(order.created_at).toLocaleDateString('ar-EG')}</p>
-            <p style="margin: 5px 0;"><strong>اسم العميل:</strong> ${order.customers?.name}</p>
-            <p style="margin: 5px 0;"><strong>الهاتف:</strong> ${order.customers?.phone}</p>
-            ${(order.customers as any)?.phone2 ? `<p style="margin: 5px 0;"><strong>هاتف إضافي:</strong> ${(order.customers as any).phone2}</p>` : ''}
-            <p style="margin: 5px 0;"><strong>المحافظة:</strong> ${order.customers?.governorate || '-'}</p>
-            <p style="margin: 5px 0;"><strong>العنوان:</strong> ${order.customers?.address}</p>
-            ${order.notes ? `<p style="margin: 5px 0;"><strong>ملاحظات:</strong> ${order.notes}</p>` : ''}
-          </div>
-          <hr style="border: 1px solid #ddd;"/>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #000; padding: 10px; background-color: #f8f8f8;">المنتج</th>
-                <th style="border: 1px solid #000; padding: 10px; background-color: #f8f8f8;">المقاس</th>
-                <th style="border: 1px solid #000; padding: 10px; background-color: #f8f8f8;">اللون</th>
-                <th style="border: 1px solid #000; padding: 10px; background-color: #f8f8f8;">السعر</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${orderItemsHtml}
-            </tbody>
-          </table>
-          <hr style="border: 1px solid #ddd; margin-top: 15px;"/>
-          <div style="margin-top: 15px; text-align: left;">
-            <p style="font-size: 18px; font-weight: bold;"><strong>الإجمالي:</strong> ${finalAmount.toFixed(2)} ج.م</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    printWindow.document.write(`
-      <html dir="rtl">
-        <head>
-          <title>الفواتير</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            @media print {
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          ${invoicesHtml}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+    await printMpInvoices(selectedOrdersData as any);
   };
 
   const getStatusColor = (status: string) => {

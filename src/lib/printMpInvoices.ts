@@ -108,25 +108,16 @@ const toDataUrl = async (url: string): Promise<string> => {
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-const parseStoredOrderDetails = (raw?: string | null) => {
+// Returns raw moderator text only when order_details is not JSON.
+// JSON-stored details lack the customer info, so fall back to legacy builder.
+const parseStoredOrderDetails = (raw?: string | null): string | null => {
   const value = (raw || "").trim();
-  if (!value) return "";
-
+  if (!value) return null;
   try {
-    const parsed = JSON.parse(value);
-    const items = Array.isArray(parsed) ? parsed : [parsed];
-    const lines = items
-      .map((item: any) => {
-        if (!item || typeof item !== "object") return "";
-        const main = [item.name, item.color, item.size].filter(Boolean).join(" ").trim();
-        const quantity = item.quantity ? `× ${item.quantity}` : "";
-        return [main, quantity].filter(Boolean).join(" ").trim();
-      })
-      .filter(Boolean);
-
-    return lines.length ? lines.join("\n") : value;
+    JSON.parse(value);
+    return null; // JSON → let legacy builder produce full details
   } catch {
-    return value;
+    return value; // raw moderator text
   }
 };
 

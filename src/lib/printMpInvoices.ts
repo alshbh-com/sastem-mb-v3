@@ -108,16 +108,14 @@ const toDataUrl = async (url: string): Promise<string> => {
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// Returns raw moderator text only when order_details is not JSON.
-// JSON-stored details lack the customer info, so fall back to legacy builder.
-const parseStoredOrderDetails = (raw?: string | null): string | null => {
+const normalizeStoredOrderDetails = (raw?: string | null): string | null => {
   const value = (raw || "").trim();
   if (!value) return null;
   try {
     JSON.parse(value);
-    return null; // JSON → let legacy builder produce full details
+    return null;
   } catch {
-    return value; // raw moderator text
+    return value.replace(/\r\n/g, "\n").trim();
   }
 };
 
@@ -166,7 +164,7 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
     parseFloat(String(o.total_amount || 0)) +
     parseFloat(String(o.shipping_cost || 0));
 
-  const details = parseStoredOrderDetails(o.order_details) || buildLegacyDetails(o);
+  const details = normalizeStoredOrderDetails(o.order_details) || buildLegacyDetails(o);
   const detailsHtml = details
     ? `<div class="details">${escapeHtml(details).replace(/\n/g, "<br/>")}</div>`
     : "";

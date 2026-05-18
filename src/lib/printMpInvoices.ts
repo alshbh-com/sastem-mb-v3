@@ -113,7 +113,45 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
     parseFloat(String(o.total_amount || 0)) +
     parseFloat(String(o.shipping_cost || 0));
 
-  const details = (o.notes || "").trim();
+  // اجمع نفس الكلام اللي المتريدور كتبه في صفحة تسجيل الأوردر
+  const lines: string[] = [];
+  const c = o.customers || {};
+  if (c.name) lines.push(c.name);
+  if (c.phone) lines.push(c.phone + (c.phone2 ? " / " + c.phone2 : ""));
+  const gov = o.governorates?.name || c.governorate;
+  if (gov) lines.push(gov);
+  if (c.address) lines.push(c.address);
+  if (o.account_name) lines.push(o.account_name);
+
+  // المنتجات كما أدخلها المتريدور
+  (o.order_items || []).forEach((it) => {
+    let name = it.products?.name || "";
+    let size = it.size || "";
+    let color = it.color || "";
+    if (!name && it.product_details) {
+      try {
+        const d = typeof it.product_details === "string" ? JSON.parse(it.product_details) : it.product_details;
+        const arr = Array.isArray(d) ? d : [d];
+        arr.forEach((p: any) => {
+          const parts = [p?.name, p?.size, p?.color, p?.quantity ? `× ${p.quantity}` : null].filter(Boolean);
+          if (parts.length) lines.push(parts.join(" - "));
+        });
+        return;
+      } catch {
+        if (typeof it.product_details === "string") name = it.product_details;
+      }
+    }
+    const parts = [name, size, color, it.quantity ? `× ${it.quantity}` : null].filter(Boolean);
+    if (parts.length) lines.push(parts.join(" - "));
+  });
+
+  // لو فيه order_details كنص حر (مش JSON) أضفه
+  if (o.order_details && !o.order_items?.length) {
+    try { JSON.parse(o.order_details); } catch { lines.push(o.order_details); }
+  }
+  if (o.notes) lines.push(o.notes);
+
+  const details = lines.join("\n").trim();
   const detailsHtml = details
     ? `<div class="details">${escapeHtml(details).replace(/\n/g, "<br/>")}</div>`
     : "";

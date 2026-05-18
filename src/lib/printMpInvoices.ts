@@ -11,6 +11,10 @@ interface OrderLike {
   shipping_cost?: number | string | null;
   notes?: string | null;
   order_details?: string | null;
+  account_name?: string | null;
+  customers?: { name?: string | null; phone?: string | null; phone2?: string | null; address?: string | null; governorate?: string | null } | null;
+  governorates?: { name?: string | null } | null;
+  order_items?: Array<{ quantity?: number | null; price?: number | string | null; size?: string | null; color?: string | null; product_details?: any; products?: { name?: string | null } | null }> | null;
 }
 
 const buildHtml = (body: string) => `<!DOCTYPE html>

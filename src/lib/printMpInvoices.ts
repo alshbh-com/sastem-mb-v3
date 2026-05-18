@@ -108,6 +108,28 @@ const toDataUrl = async (url: string): Promise<string> => {
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+const parseStoredOrderDetails = (raw?: string | null) => {
+  const value = (raw || "").trim();
+  if (!value) return "";
+
+  try {
+    const parsed = JSON.parse(value);
+    const items = Array.isArray(parsed) ? parsed : [parsed];
+    const lines = items
+      .map((item: any) => {
+        if (!item || typeof item !== "object") return "";
+        const main = [item.name, item.color, item.size].filter(Boolean).join(" ").trim();
+        const quantity = item.quantity ? `× ${item.quantity}` : "";
+        return [main, quantity].filter(Boolean).join(" ").trim();
+      })
+      .filter(Boolean);
+
+    return lines.length ? lines.join("\n") : value;
+  } catch {
+    return value;
+  }
+};
+
 const buildLegacyDetails = (o: OrderLike) => {
   const lines: string[] = [];
   const c = o.customers || {};
@@ -153,7 +175,7 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
     parseFloat(String(o.total_amount || 0)) +
     parseFloat(String(o.shipping_cost || 0));
 
-  const details = (o.order_details || "").trim() || buildLegacyDetails(o);
+  const details = parseStoredOrderDetails(o.order_details) || buildLegacyDetails(o);
   const detailsHtml = details
     ? `<div class="details">${escapeHtml(details).replace(/\n/g, "<br/>")}</div>`
     : "";

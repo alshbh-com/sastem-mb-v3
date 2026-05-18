@@ -79,7 +79,7 @@ const buildHtml = (body: string) => `<!DOCTYPE html>
   .barcode-wrap svg { max-width: 90%; height: 18mm; }
   .code-text { font-size: 11px; margin-top:1mm; letter-spacing: 1px; }
   .details {
-    font-size: 16px;
+    font-size: 21px;
     line-height: 1.9;
     text-align: center;
     padding: 4mm 2mm;

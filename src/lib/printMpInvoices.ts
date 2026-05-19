@@ -171,16 +171,17 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
 
   return `
     <div class="invoice">
-      <div class="logo-wrap"><img src="${logoSrc}" alt="logo" /></div>
+      <div class="header">
+        <div class="logo-wrap"><img src="${logoSrc}" alt="logo" /></div>
+        <div class="barcode-wrap">
+          ${barcodeSvg}
+          <div class="code-text">${code}</div>
+        </div>
+      </div>
 
       ${detailsHtml}
 
       <div class="total">الإجمالي: ${total.toFixed(2)} ج.م</div>
-
-      <div class="barcode-wrap">
-        ${barcodeSvg}
-        <div class="code-text">${code}</div>
-      </div>
     </div>`;
 };
 

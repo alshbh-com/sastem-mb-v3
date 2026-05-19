@@ -422,7 +422,7 @@ const Orders = () => {
   });
 
   const createManualOrderMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ rawManualOrderText }: { rawManualOrderText: string }) => {
       const selectedProduct = productsList?.find(p => p.id === manualOrder.productId);
       const productName = selectedProduct?.name || manualOrder.productName;
 
@@ -481,7 +481,8 @@ const Orders = () => {
         .join("\n")
         .trim();
 
-      const rawOrderDetails = manualOrderText.trim() || fallbackOrderDetails || null;
+      const normalizedManualOrderText = rawManualOrderText.replace(/\r\n/g, "\n");
+      const rawOrderDetails = normalizedManualOrderText.trim() ? normalizedManualOrderText : fallbackOrderDetails || null;
 
       // Create order with new fields
       const { data: order, error: orderError } = await supabase
@@ -1307,7 +1308,7 @@ const Orders = () => {
                     toast.error("لم يتم استخراج السعر — تأكد من وجود سطر فيه (اجمالي) ورقم");
                     return;
                   }
-                  createManualOrderMutation.mutate();
+                  createManualOrderMutation.mutate({ rawManualOrderText: manualOrderText });
                   setManualOrderText("");
                 }}
                 className="w-full"

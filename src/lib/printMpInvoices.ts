@@ -109,13 +109,20 @@ const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const normalizeStoredOrderDetails = (raw?: string | null): string | null => {
-  const value = (raw || "").trim();
-  if (!value) return null;
+  const value = (raw || "").replace(/\r\n/g, "\n");
+  if (!value.trim()) return null;
+
   try {
-    JSON.parse(value);
+    const parsed = JSON.parse(value);
+
+    if (typeof parsed === "string") {
+      const parsedText = parsed.replace(/\r\n/g, "\n");
+      return parsedText.trim() ? parsedText.trim() : null;
+    }
+
     return null;
   } catch {
-    return value.replace(/\r\n/g, "\n").trim();
+    return value.trim();
   }
 };
 
@@ -164,7 +171,8 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
     parseFloat(String(o.total_amount || 0)) +
     parseFloat(String(o.shipping_cost || 0));
 
-  const details = normalizeStoredOrderDetails(o.order_details) || buildLegacyDetails(o);
+  const storedDetails = normalizeStoredOrderDetails(o.order_details);
+  const details = storedDetails ?? buildLegacyDetails(o);
   const detailsHtml = details
     ? `<div class="details">${escapeHtml(details).replace(/\n/g, "<br/>")}</div>`
     : "";

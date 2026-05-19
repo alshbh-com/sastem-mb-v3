@@ -34,8 +34,8 @@ const buildHtml = (body: string) => `<!DOCTYPE html>
   .sheet:last-child { page-break-after: auto; }
   .invoice {
     border: 2px solid #000;
-    border-radius: 18mm 18mm 6mm 6mm;
-    padding: 7mm 6mm 6mm 6mm;
+    border-radius: 14mm 14mm 6mm 6mm;
+    padding: 5mm 6mm 6mm 6mm;
     height: 192mm;
     page-break-inside: avoid;
     display: flex;
@@ -43,25 +43,32 @@ const buildHtml = (body: string) => `<!DOCTYPE html>
     position: relative;
     background:#fff;
   }
+  .header {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4mm;
+    margin-bottom: 3mm;
+    padding-bottom: 3mm;
+    border-bottom: 1.5px dashed #000;
+  }
   .logo-wrap {
-    text-align:center;
-    margin-bottom: 4mm;
+    flex: 0 0 auto;
+    text-align: right;
+    padding-right: 2mm;
   }
   .logo-wrap img {
-    max-height: 29mm;
-    max-width: 60mm;
+    max-height: 24mm;
+    max-width: 45mm;
     object-fit: contain;
   }
-  .field {
-    font-size: 14px;
-    line-height: 1.9;
-    border: 1px solid #000;
-    padding: 2mm 3mm;
-    margin-bottom: 2.5mm;
-    border-radius: 2mm;
+  .barcode-wrap {
+    flex: 1 1 auto;
+    text-align: center;
   }
-  .field b { font-weight: 700; }
-  .row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; }
+  .barcode-wrap svg { max-width: 100%; height: 20mm; }
+  .code-text { font-size: 11px; margin-top: 1mm; letter-spacing: 1px; font-weight: 600; }
   .total {
     font-size: 18px;
     font-weight: 800;
@@ -69,15 +76,8 @@ const buildHtml = (body: string) => `<!DOCTYPE html>
     border: 2px solid #000;
     padding: 3mm;
     border-radius: 2mm;
-    margin-top: 1mm;
+    margin-top: 2mm;
   }
-  .barcode-wrap {
-    margin-top: auto;
-    text-align:center;
-    padding-top: 3mm;
-  }
-  .barcode-wrap svg { max-width: 90%; height: 18mm; }
-  .code-text { font-size: 11px; margin-top:1mm; letter-spacing: 1px; }
   .details {
     font-size: 21px;
     line-height: 1.9;
@@ -171,16 +171,17 @@ const buildInvoice = (o: OrderLike, logoSrc: string, barcodeSvg: string, code: s
 
   return `
     <div class="invoice">
-      <div class="logo-wrap"><img src="${logoSrc}" alt="logo" /></div>
+      <div class="header">
+        <div class="logo-wrap"><img src="${logoSrc}" alt="logo" /></div>
+        <div class="barcode-wrap">
+          ${barcodeSvg}
+          <div class="code-text">${code}</div>
+        </div>
+      </div>
 
       ${detailsHtml}
 
       <div class="total">الإجمالي: ${total.toFixed(2)} ج.م</div>
-
-      <div class="barcode-wrap">
-        ${barcodeSvg}
-        <div class="code-text">${code}</div>
-      </div>
     </div>`;
 };
 
